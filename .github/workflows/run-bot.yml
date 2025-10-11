@@ -2,8 +2,8 @@ name: Run AfterHourTV Bot
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # Ejecuta cada 30 minutos
-  workflow_dispatch:         # Permite ejecutar manualmente
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
 
 jobs:
   run-bot:
