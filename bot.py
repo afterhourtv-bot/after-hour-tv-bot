@@ -18,10 +18,10 @@ auth.set_access_token(access_token, access_secret)
 api = tweepy.API(auth)
 
 # -------------------------------
-# Función para generar contenido
+# Función para generar contenido con la nueva API
 # -------------------------------
 def generate_content():
-    response = openai.ChatCompletion.create(
+    response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
             {
@@ -40,7 +40,8 @@ def generate_content():
         temperature=0.7,
         max_tokens=100
     )
-    return response.choices[0].message.content.strip()
+    # La respuesta ahora se obtiene así en la nueva API
+    return response.choices[0].message["content"].strip()
 
 # -------------------------------
 # Función para publicar en Twitter/X
