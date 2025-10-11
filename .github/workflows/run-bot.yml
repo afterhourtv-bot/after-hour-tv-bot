@@ -27,4 +27,3 @@ jobs:
           X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
         run: |
           python bot.py
-          Add workflow to run AfterHourTV bot
