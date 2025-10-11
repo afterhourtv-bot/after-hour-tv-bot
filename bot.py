@@ -1,32 +1,37 @@
 import os
-import openai
 import tweepy
-import random
+from openai import OpenAI
+
+print("🚀 Iniciando After Hour TV Bot...")
 
 # -------------------------------
-# Load API keys from environment variables (GitHub Secrets)
+# Configuración de API Keys desde Secrets
 # -------------------------------
-openai.api_key = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+X_API_KEY = os.getenv("X_API_KEY")
+X_API_SECRET = os.getenv("X_API_SECRET")
+X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN")
+X_ACCESS_SECRET = os.getenv("X_ACCESS_SECRET")
 
-api_key = os.getenv("X_API_KEY")
-api_secret = os.getenv("X_API_SECRET")
-access_token = os.getenv("X_ACCESS_TOKEN")
-access_secret = os.getenv("X_ACCESS_SECRET")
+# -------------------------------
+# Inicializar cliente de OpenAI
+# -------------------------------
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # -------------------------------
-# Authenticate with Twitter/X
+# Autenticación con Twitter/X
 # -------------------------------
-auth = tweepy.OAuthHandler(api_key, api_secret)
-auth.set_access_token(access_token, access_secret)
+auth = tweepy.OAuthHandler(X_API_KEY, X_API_SECRET)
+auth.set_access_token(X_ACCESS_TOKEN, X_ACCESS_SECRET)
 api = tweepy.API(auth)
 
 # -------------------------------
-# Generate content with OpenAI
+# Función para generar contenido
 # -------------------------------
 def generate_content():
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "system",
@@ -41,16 +46,19 @@ def generate_content():
                     "content": "Genera un tweet divertido, corto, con vacilón boricua sobre la vida en Puerto Rico."
                 }
             ],
-            temperature=0.7,
-            max_tokens=100
+            temperature=0.8,
+            max_completion_tokens=80
         )
-        return response.choices[0].message.content.strip()
+
+        tweet = response.choices[0].message.content.strip()
+        return tweet
+
     except Exception as e:
         print("Error generando contenido con OpenAI:", e)
         return None
 
 # -------------------------------
-# Post content to Twitter/X
+# Función para publicar en Twitter/X
 # -------------------------------
 def post_content():
     content = generate_content()
@@ -58,21 +66,16 @@ def post_content():
         print("No se pudo generar contenido. Abortando.")
         return
 
-    print("Contenido a publicar:", content)
-
     try:
-        tweet = api.update_status(content)
+        api.update_status(content)
         print("✅ Tweet publicado correctamente:")
-        print(tweet)
-    except tweepy.TweepError as e:
-        print("❌ Error de Twitter/X:", e.response.text)
+        print(content)
     except Exception as e:
-        print("❌ Otro error:", e)
+        print("Error publicando tweet:", e)
 
 # -------------------------------
-# Main execution
+# Ejecutar el bot
 # -------------------------------
 if __name__ == "__main__":
-    print("🚀 Iniciando After Hour TV Bot...")
     post_content()
     print("🏁 Ejecución completada.")
