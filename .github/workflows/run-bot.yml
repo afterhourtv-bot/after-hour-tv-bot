@@ -1,36 +1,73 @@
-name: Run AfterHourTV Bot
+name: Run AfterHourTV Chatbot
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # Ejecuta cada 30 minutos
-  workflow_dispatch:         # Permite ejecutarlo manualmente
+    - cron: '*/15 * * * *'   # Runs every 15 minutes for faster responses
+  workflow_dispatch:         # Allows manual trigger
+    inputs:
+      mode:
+        description: 'Bot mode: chatbot (reply to mentions), post (standalone tweet), or both'
+        required: false
+        default: 'chatbot'
+        type: choice
+        options:
+          - chatbot
+          - post
+          - both
 
 jobs:
-  run-bot:
+  run-chatbot:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ Clonar el repositorio
+      # 1. Checkout repository
       - uses: actions/checkout@v4
 
-      # 2️⃣ Configurar Python
+      # 2. Setup Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      # 3️⃣ Instalar dependencias
+      # 3. Cache pip dependencies
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # 4. Restore replied mentions cache
+      - name: Restore replied mentions cache
+        uses: actions/cache@v4
+        with:
+          path: replied_mentions.json
+          key: replied-mentions-${{ github.run_id }}
+          restore-keys: |
+            replied-mentions-
+
+      # 5. Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install openai tweepy
+          pip install -r requirements.txt
 
-      # 4️⃣ Ejecutar el bot
-      - name: Run bot
+      # 6. Run the chatbot
+      - name: Run chatbot
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
         run: |
-          python bot.py
+          python chatbot.py ${{ github.event.inputs.mode || 'chatbot' }}
+
+      # 7. Save replied mentions for next run
+      - name: Save replied mentions cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: replied_mentions.json
+          key: replied-mentions-${{ github.run_id }}
